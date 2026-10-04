@@ -1,0 +1,56 @@
+/*
+===============================================================================
+Measures Exploration (Key Metrics)
+===============================================================================
+Purpose:
+    - To calculate aggregated metrics (e.g., totals, averages) for quick insights.
+  
+
+SQL Functions Used:
+    - COUNT(), SUM(), AVG()
+===============================================================================
+*/
+-- 4)Exploring the measure 
+-- 4.1 find the totals sales 
+select 
+sum (sales)  as total_sales
+from gold.fact_sales
+--4.2  find howmany items are sold 
+select 
+count(quantity) as sold_items
+from gold.fact_sales
+--4.3  average selling price 
+select 
+avg(price) as average_price
+from gold.fact_sales
+--4.4  the total number of orders 
+select
+count (order_number) as number_orders,
+count (distinct order_number) as number_orders_unique -- not to count an order twice
+from gold.fact_sales
+--4.5  total number of products
+select 
+count(product_id) number_of_products
+from gold.dim_product
+--4.6  total number of customers 
+select 
+count (customer_id) number_of_customers
+from gold.dim_customers
+--    total number of customers that placed an order
+select 
+count (distinct customer_id) number_of_customers
+from gold.dim_customers
+
+-- generate a report that shows all the key metric 
+select  'Total_Sales' as measure_name ,sum (sales)  as measure_value  from gold.fact_sales
+union all
+select  'Total_Quantity' as measure_name ,count(quantity)  as measure_value  from gold.fact_sales
+union all
+select  'Avg_Price ' as measure_name ,avg(price)  as measure_value  from gold.fact_sales
+union all
+select  'Total_Orders ' as measure_name ,count (order_number)  as measure_value  from gold.fact_sales
+union all
+select  'Total.Nr_Product  ' as measure_name , count(product_id)  as measure_value from gold.dim_product
+union all
+select  'Total.Nr_Customers  ' as measure_name , count (customer_id)  as measure_value from gold.dim_customers
+--*************************************************************************************************************
