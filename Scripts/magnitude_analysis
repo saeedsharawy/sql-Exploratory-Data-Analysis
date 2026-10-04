@@ -1,0 +1,113 @@
+/*
+===============================================================================
+Magnitude Analysis
+===============================================================================
+Purpose:
+    - To quantify data and group results by specific dimensions.
+    - For understanding data distribution across categories.
+
+SQL Functions Used:
+    - Aggregate Functions: SUM(), COUNT(), AVG()
+    - GROUP BY, ORDER BY
+===============================================================================
+*/
+--5) magnitude 
+-- find the total customers by country
+select 
+country,
+count (customer_key) as total_customers
+from gold.dim_customers
+group by country
+order by total_customers desc
+--total customer by gender 
+select 
+gender,
+count (customer_key) as total_customers
+from gold.dim_customers
+group by gender
+order by total_customers desc
+-- find the total  product by category 
+select 
+category ,
+count(product_key) as total_products
+from gold.dim_product
+group by category
+order by total_products desc
+-- find the avrage cost in each category 
+select  
+category ,
+avg(cost) average_cost
+from gold.dim_product
+group by category
+order by average_cost desc
+-- total  revenue for each category 
+select 
+p.category,
+sum (f.sales) as total_revenue
+from gold.fact_sales f
+left join gold.dim_product p
+on f.product_key = p.product_key
+group  by p.category
+order by total_revenue desc
+-- total  revenue for each customer
+select 
+c.customer_id,
+c.firstname,
+c.lastname,
+sum (f.sales) as total_cust_revenue
+from gold.fact_sales f
+left join gold.dim_customers c
+on f.customer_key = c.customer_key
+group  by c.customer_id, c.firstname, c.lastname
+order by total_cust_revenue desc
+--distribution of items acrros the country
+select 
+c.country,
+sum (f.quantity) as total_quantity
+from gold.fact_sales f
+left join gold.dim_customers c
+on f.customer_key = c.customer_key
+group  by c.country
+order by total_quantity desc
+-- total sales by the year
+select 
+year (order_date),
+sum(sales) as total_sales
+from gold.fact_sales
+group  by year (order_date)
+order by total_sales desc
+-- total sales by the quarter
+select 
+datepart (quarter,order_date) quarter_year,
+sum(sales) as total_sales
+from gold.fact_sales
+group  by datepart (quarter,order_date)
+order by total_sales desc
+-- total sales for each product 
+select 
+p.category,
+p.sub_category,
+p.product_name,
+sum (f.sales) total_sales
+from gold.fact_sales f
+left join gold.dim_product p 
+on f.product_key = p.product_key
+group  by p.category,
+p.sub_category,
+p.product_name
+order by total_sales desc
+--total sales for each product at each country
+select 
+p.category,
+c.country,
+c.gender,
+sum (f.sales) total_sales
+from gold.fact_sales f
+left join gold.dim_product p 
+on f.product_key = p.product_key
+left join gold.dim_customers c
+on f.customer_key=c.customer_key
+group  by p.category,
+c.gender,
+c.country
+order by total_sales desc
