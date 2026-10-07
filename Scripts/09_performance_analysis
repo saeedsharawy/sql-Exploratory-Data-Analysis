@@ -1,0 +1,46 @@
+/*
+===============================================================================
+Performance Analysis (Year-over-Year, Month-over-Month)
+===============================================================================
+Purpose:
+    - To measure the performance of products, customers, or regions over time.
+    - For identifying high-performing entities.
+    - To track yearly trends and growth.
+
+SQL Functions Used:
+    - LAG(): Accesses data from previous rows.
+    - AVG() OVER(): Computes average values within partitions.
+    - CASE: Defines conditional logic for trend analysis.
+===============================================================================
+*/
+select 
+order_year,
+current_sales,
+product_name,
+avg(current_sales) over (partition by product_name ) as avg_cuurent_sales,
+current_sales -avg(current_sales) over (partition by product_name ) as current_year_performance,
+case when current_sales -avg(current_sales) over (partition by product_name ) >0 then 'above avg'
+	 when current_sales -avg(current_sales) over (partition by product_name ) <0 then 'below avg'
+	 else 'avg'
+end current_situation,
+--to get last year sales use lag window function
+lag(current_sales) over (partition by product_name order by order_year) as last_year_sales,
+current_sales -lag(current_sales) over (partition by product_name order by order_year ) as last_year_performance,
+case when current_sales -lag(current_sales) over (partition by product_name order by order_year ) >0 then 'Increasing'
+	 when current_sales -lag(current_sales) over (partition by product_name order by order_year ) <0 then 'Decreasing'
+	 else 'No Change'
+end last_year_situation
+from (
+/* you can take this subquery as cte but i preferd to work with it but if you are making lots of query 
+and this one will be used many times fell free to make it as cte*/
+select  
+year(f.order_date ) as order_year,
+sum(f.sales) as current_sales,
+p.product_name as product_name 
+from gold.fact_sales f
+left join gold.dim_product p
+on f.product_key = p.product_key
+where order_date is not null 
+group by year(f.order_date ) ,p.product_name
+)t
+order by product_name ,order_year
