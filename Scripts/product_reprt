@@ -1,0 +1,90 @@
+/*
+================================================================================
+Product Report
+================================================================================
+Purpose:
+- This report consolidates key product metrics and behaviors.
+
+Highlights:
+1. Gathers essential fields such as product name, category, subcategory, and cost.
+2. Segments products by revenue to identify High-Performers, Mid-Range, or Low-Performers.
+3. Aggregates product-level metrics:
+- total orders
+- total sales
+- total quantity sold
+- total customers (unique)
+- lifespan (in months)
+4. Calculates valuable KPIs:
+- recency (months since last sale)
+- average order revenue (AOR)
+- average monthly revenue
+================================================================================
+*/
+create view gold.products_report as 
+with prouduct_basicQuery as (
+select 
+f.customer_key,
+p.product_key,
+p.product_name,
+p.category,
+p.sub_category,
+p.cost,
+f.order_number,
+f.quantity,
+f.price,
+f.sales,
+f.order_date
+
+from gold.fact_sales f
+left join gold.dim_product p
+on  p.product_key = f.product_key
+where order_date is not null
+)
+,product_aggregation as (
+select 
+count ( distinct customer_key) as total_customers,
+--count ( distinct product_key) as total_products,
+product_name,
+category,
+sub_category,
+cost,
+count(order_number) as total_orders,
+sum(quantity) as total_quantity,
+sum(sales) as total_sales,
+max(order_date) as last_order,
+min(order_date) as first_order,
+DATEDIFF(month,min(order_date),max(order_date)) as lifespan
+from prouduct_basicQuery
+group by 
+product_name,
+category,
+sub_category,
+cost
+
+)
+select 
+total_customers,
+product_name,
+category,
+sub_category,
+cost,
+total_orders,
+total_quantity,
+total_sales,
+case when total_sales <30000 then 'Low Performance'
+     when total_sales between 30000 and 80000 then 'Mid Range'
+     else 'High Performance'
+end product_segements,
+last_order,
+--recency (months since last order)
+concat (datediff (month , last_order, GETDATE()),' ', 'Month') as recency,
+--average order revenue 
+case     when  total_orders= 0 then 0
+         else  total_sales/ total_orders
+end average_order_value,
+-- average monthly spend
+case when  lifespan= 0 then total_sales -- /*we dont make =0 as this time 0 means that the customer exist 
+         else  total_sales/ lifespan            -- for one month so we get his total sales*/
+end average_monthly_spend,
+lifespan
+from product_aggregation
